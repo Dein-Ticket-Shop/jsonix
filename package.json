@@ -63,5 +63,6 @@
     "files": [
         "dist"
     ],
-    "type": "module"
+    "type": "module",
+    "types": "dist/index.d.ts"
 }
