@@ -3,7 +3,6 @@ import "./Util.js";
 import "./Class.js";
 import "./XML.js";
 import "./DOM.js";
-import "./Request.js";
 import "./Schema.js";
 import "./Model.js";
 import "./Util/Type.js";

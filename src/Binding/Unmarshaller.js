@@ -14,21 +14,6 @@ Jsonix.Binding.Unmarshaller = Jsonix.Class(Jsonix.Binding.Unmarshalls.Element, J
         var doc = Jsonix.DOM.parse(text);
         return this.unmarshalDocument(doc);
     },
-    unmarshalURL: function (url, callback, options) {
-        Jsonix.Util.Ensure.ensureString(url);
-        Jsonix.Util.Ensure.ensureFunction(callback);
-        if (Jsonix.Util.Type.exists(options)) {
-            Jsonix.Util.Ensure.ensureObject(options);
-        }
-        that = this;
-        Jsonix.DOM.load(
-            url,
-            function (doc) {
-                callback(that.unmarshalDocument(doc));
-            },
-            options
-        );
-    },
     unmarshalFile: function (fileName, callback, options) {
         Jsonix.Util.Ensure.ensureString(fileName);
         Jsonix.Util.Ensure.ensureFunction(callback);

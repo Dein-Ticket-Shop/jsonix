@@ -16,28 +16,6 @@ Jsonix.DOM = {
         Jsonix.Util.Ensure.ensureExists(text);
         return new xmldom.DOMParser().parseFromString(text, "application/xml");
     },
-    load: function (url, callback, options) {
-        var request = Jsonix.Request.INSTANCE;
-
-        request.issue(
-            url,
-            function (transport) {
-                var result;
-                if (Jsonix.Util.Type.exists(transport.responseXML) && Jsonix.Util.Type.exists(transport.responseXML.documentElement)) {
-                    result = transport.responseXML;
-                } else if (Jsonix.Util.Type.isString(transport.responseText)) {
-                    result = Jsonix.DOM.parse(transport.responseText);
-                } else {
-                    throw new Error("Response does not have valid [responseXML] or [responseText].");
-                }
-                callback(result);
-            },
-            function (transport) {
-                throw new Error("Could not retrieve XML from URL [" + url + "].");
-            },
-            options
-        );
-    },
     xlinkFixRequired: null,
     isXlinkFixRequired: function () {
         if (Jsonix.DOM.xlinkFixRequired === null) {
