@@ -1,11 +1,4 @@
-.project
-.settings
-target
-.tern-project
-.*~
-*~
-.idea
-/bin/
-*.iml
-.classpath
-rm_ide_settings.sh
+.DS_Store
+node_modules
+dist
+*.tgz
