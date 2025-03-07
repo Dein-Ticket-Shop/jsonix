@@ -64,7 +64,7 @@ interface Marshaller {
     marshalDocument(object: Object): Element;
 }
 
-declare module Jsonix {
+export namespace Jsonix {
     export class Context {
         /**
          * Creates an instance of Context.
