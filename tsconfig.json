@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "declarationDir": "./dist",
+    "module": "NodeNext",
+    "target": "ESNext",
+    "lib": [
+      "ESNext",
+    ],
+    "moduleResolution": "nodenext",
+    "skipLibCheck": true
+  },
+  "files": [
+    "src/compiler.ts"
+  ]
+}
