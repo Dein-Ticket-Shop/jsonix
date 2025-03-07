@@ -8,7 +8,7 @@ const __dirname = new URL(".", import.meta.url).pathname;
 const jarFolder = `../libs`;
 
 export async function compile(
-    inputXSDContent: string,
+    inputPath: string,
     options: {
         name: string;
         /**
@@ -26,19 +26,16 @@ export async function compile(
     }
 ): Promise<string> {
     let { name, removeIndexSignatures, convertUnknownsToString, convertTuplesToArray } = options;
-
+    inputPath = path.resolve(inputPath);
     removeIndexSignatures ??= true;
     convertUnknownsToString ??= true;
     convertTuplesToArray ??= true;
 
     const tempFolder = path.resolve(`temp`);
-    const tempFileName = `${name}.xsd`;
-    const tempFilePath = `${tempFolder}/${tempFileName}`;
     fs.mkdirSync(tempFolder, { recursive: true });
-    fs.writeFileSync(tempFilePath, inputXSDContent);
 
-    childProcess.execSync(`java --add-opens=java.base/java.lang=ALL-UNNAMED -cp "${jarFolder}/jsonix-schema-compiler-full-2.3.9.jar:${jarFolder}/javax.activation-1.2.0.jar" org.hisrc.jsonix.JsonixMain -d ${tempFolder} -p ${name} ${tempFilePath}`, { shell: true as any, cwd: __dirname });
-    childProcess.execSync(`java --add-opens=java.base/java.lang=ALL-UNNAMED -cp "${jarFolder}/jsonix-schema-compiler-full-2.3.9.jar:${jarFolder}/javax.activation-1.2.0.jar" org.hisrc.jsonix.JsonixMain -d ${tempFolder} -generateJsonSchema -p ${name} ${tempFilePath}`, { shell: true as any, cwd: __dirname });
+    await exec(`java --add-opens=java.base/java.lang=ALL-UNNAMED -cp "${jarFolder}/jsonix-schema-compiler-full-2.3.9.jar:${jarFolder}/javax.activation-1.2.0.jar" org.hisrc.jsonix.JsonixMain -d ${tempFolder} -p ${name} ${inputPath}`, { shell: true as any, cwd: __dirname, stdio: "inherit" });
+    await exec(`java --add-opens=java.base/java.lang=ALL-UNNAMED -cp "${jarFolder}/jsonix-schema-compiler-full-2.3.9.jar:${jarFolder}/javax.activation-1.2.0.jar" org.hisrc.jsonix.JsonixMain -d ${tempFolder} -generateJsonSchema -p ${name} ${inputPath}`, { shell: true as any, cwd: __dirname, stdio: "inherit" });
 
     const schemaContents = fs.readFileSync(`${tempFolder}/${name}.jsonschema`, "utf-8").replace(/http:\/\/www.jsonix.org\/jsonschemas\//g, "node_modules/jsonix/jsonschemas/");
     let types = await jsonSchemaToTypescript.compile(JSON.parse(schemaContents), name, {});
@@ -80,5 +77,20 @@ export function ${name[0].toLowerCase()}${name.slice(1)}ToXml(obj: ${name}): str
     lines.splice(6, 0, 'import { Jsonix } from "@dein-ticket-shop/jsonix";');
     combined = lines.join("\n");
 
+    fs.rmSync(`${tempFolder}/${name}.jsonschema`);
+    fs.rmSync(`${tempFolder}/${name}.js`);
+
     return combined;
+}
+
+async function exec(command, options) {
+    return new Promise((resolve, reject) => {
+        childProcess.exec(command, options, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(stdout);
+            }
+        });
+    });
 }
