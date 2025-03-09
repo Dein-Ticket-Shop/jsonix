@@ -75,8 +75,7 @@ export async function compile(
 
     const baseTypeName = types.match(/export type (.*) =/)?.[1];
     if (!baseTypeName) {
-        console.log(types);
-        throw new Error("Could not find base type name there");
+        throw new Error(`Could not find base type name in generated types for "${name}" (${inputPath})`);
     }
 
     const fromXmlFunctionName = `xmlTo${name}Response`;
