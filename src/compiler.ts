@@ -28,7 +28,7 @@ export async function compile(
          */
         cleanStringOrNullUnions?: boolean;
     }
-): Promise<string> {
+) {
     let { name, removeIndexSignatures, convertUnknownsToString, convertTuplesToArray, cleanStringOrNullUnions } = options;
     inputPath = path.resolve(inputPath);
     removeIndexSignatures ??= true;
@@ -69,7 +69,7 @@ export async function compile(
     let poFile = fs
         .readFileSync(`${tempFolder}/${name}.js`, "utf-8")
         // everything in the first line
-        .replace(/^.*\n  var .* = {\n/, `const ${poName} = {\n`);
+        .replace(/^.*\n  var .* = {\n/, `export const ${poName} = {\n`);
     // remove all lines after including return {
     poFile = poFile.slice(0, poFile.indexOf("return {"));
 
@@ -79,13 +79,16 @@ export async function compile(
         throw new Error("Could not find base type name there");
     }
 
+    const fromXmlFunctionName = `xmlTo${name}Response`;
+    const toXmlFunctionName = `${name[0].toLowerCase()}${name.slice(1)}ToXml`;
+
     let combined = `${types}\n${poFile}\nconst context = new Jsonix.Context<${baseTypeName}>([${poName}]);
 const unmarshaller = context.createUnmarshaller();
 const marshaller = context.createMarshaller();
-export function xmlTo${name}Response(xml: string) {
+export function ${fromXmlFunctionName}(xml: string) {
     return unmarshaller.unmarshalString(xml).value!;
 }
-export function ${name[0].toLowerCase()}${name.slice(1)}ToXml(obj: Required<${baseTypeName}["value"]>): string {
+export function ${toXmlFunctionName}(obj: Required<${baseTypeName}["value"]>): string {
     return marshaller.marshalString(obj);
 }`;
 
@@ -96,7 +99,15 @@ export function ${name[0].toLowerCase()}${name.slice(1)}ToXml(obj: Required<${ba
     fs.rmSync(`${tempFolder}/${name}.jsonschema`);
     fs.rmSync(`${tempFolder}/${name}.js`);
 
-    return combined;
+    return {
+        resultTS: combined,
+        exportedNames: {
+            fromXmlFunctionName,
+            toXmlFunctionName,
+            baseTypeName,
+            poName,
+        },
+    };
 }
 
 async function exec(command, options) {
