@@ -23,13 +23,18 @@ export async function compile(
          * @default true
          */
         convertTuplesToArray?: boolean;
+        /**
+         * @default true
+         */
+        cleanStringOrNullUnions?: boolean;
     }
 ): Promise<string> {
-    let { name, removeIndexSignatures, convertUnknownsToString, convertTuplesToArray } = options;
+    let { name, removeIndexSignatures, convertUnknownsToString, convertTuplesToArray, cleanStringOrNullUnions } = options;
     inputPath = path.resolve(inputPath);
     removeIndexSignatures ??= true;
     convertUnknownsToString ??= true;
     convertTuplesToArray ??= true;
+    cleanStringOrNullUnions ??= true;
 
     const tempFolder = path.resolve(`temp`);
     fs.mkdirSync(tempFolder, { recursive: true });
@@ -55,6 +60,11 @@ export async function compile(
         types = types.replace(/\[.*, \.\.\.(.*)\]/g, "$1");
     }
 
+    if (cleanStringOrNullUnions) {
+        // (string | null) &
+        types = types.replace(/\(string \| null\) &/g, "");
+    }
+
     const poName = `${name}PO`;
     let poFile = fs
         .readFileSync(`${tempFolder}/${name}.js`, "utf-8")
@@ -63,14 +73,20 @@ export async function compile(
     // remove all lines after including return {
     poFile = poFile.slice(0, poFile.indexOf("return {"));
 
-    let combined = `${types}\n${poFile}\nconst context = new Jsonix.Context([${poName}]);
+    const baseTypeName = types.match(/export type (.*) =/)?.[1];
+    if (!baseTypeName) {
+        console.log(types);
+        throw new Error("Could not find base type name there");
+    }
+
+    let combined = `${types}\n${poFile}\nconst context = new Jsonix.Context<${baseTypeName}>([${poName}]);
 const unmarshaller = context.createUnmarshaller();
 const marshaller = context.createMarshaller();
-export function xmlTo${name}Response(xml: string): ${name} {
-    return unmarshaller.unmarshalString(xml).value as ${name};
+export function xmlTo${name}Response(xml: string) {
+    return unmarshaller.unmarshalString(xml).value!;
 }
-export function ${name[0].toLowerCase()}${name.slice(1)}ToXml(obj: ${name}): string {
-    return marshaller.marshalString(obj as any);
+export function ${name[0].toLowerCase()}${name.slice(1)}ToXml(obj: Required<${baseTypeName}["value"]>): string {
+    return marshaller.marshalString(obj);
 }`;
 
     const lines = combined.split("\n");
