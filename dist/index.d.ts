@@ -1,71 +1,74 @@
+type TBase = {
+    value?: any;
+};
+
 /**
  * (description)
  *
  * @interface Unmarshaller
  */
-interface Unmarshaller {
-    //TODO: <T> @see createUnmarshaller
+interface Unmarshaller<T extends TBase> {
     /**
      * (description)
      *
      * @param {string} arg (description)
-     * @returns {Object} (description)
+     * @returns {T} (description)
      */
-    unmarshalString(arg: string): Object;
+    unmarshalString(arg: string): T;
 
     /**
      * (description)
      *
      * @param {string} fileName (description)
-     * @param {(unmarshalled:Object)=> void} callback (description)
+     * @param {(unmarshalled:T)=> void} callback (description)
      * @param {Object} options (description)
      */
-    unmarshalFile(fileName: string, callback: (unmarshalled: Object) => void, options: Object): void;
+    unmarshalFile(fileName: string, callback: (unmarshalled: T) => void, options: Object): void;
 
     /**
      * (description)
      *
      * @param {string} url (description)
-     * @param {(unmarshalled:Object)=> void} callback (description)
+     * @param {(unmarshalled:T)=> void} callback (description)
      * @param {Object} options (description)
      */
-    unmarshalURL(url: string, callback: (unmarshalled: Object) => void, options: Object): void;
+    unmarshalURL(url: string, callback: (unmarshalled: T) => void, options: Object): void;
 
     /**
      * (description)
      *
      * @param {Element} doc (description)
      * @param {string} scope (description)
-     * @returns {Object} (description)
+     * @returns {T} (description)
      */
-    unmarshalDocument(doc: Element, scope: string): Object;
+    unmarshalDocument(doc: Element, scope: string): T;
 }
 /**
  * (description)
  *
  * @interface Marshaller
  */
-interface Marshaller {
+interface Marshaller<T extends TBase> {
     // TODO: generics like marshalString(object:T):string;
     /**
      * (description)
      *
-     * @param {Object} object (description)
+     * @param {T} object (description)
      * @returns {string} (description)
      */
-    marshalString(object: Object): string;
+    marshalString(object: T["value"]): string;
 
     /**
      * (description)
      *
-     * @param {Object} object (description)
+     * @param {T} object (description)
      * @returns {Element} (description)
      */
-    marshalDocument(object: Object): Element;
+    marshalDocument(object: T["value"]): Element;
 }
 
 export namespace Jsonix {
-    export class Context {
+    export class Context<T extends TBase> {
         /**
          * Creates an instance of Context.
          *
@@ -101,11 +104,9 @@ export namespace Jsonix {
 
         getSubstitutionMembers(name: string): any;
 
-        createMarshaller(): Marshaller;
+        createMarshaller(): Marshaller<T>;
 
-        createUnmarshaller(): Unmarshaller;
-
-        //TODO: createUnmarshaller<T>(type: T): Unmarshaller<T>;
+        createUnmarshaller(): Unmarshaller<T>;
 
         getNamespaceURI(prefix: string): any;
 
