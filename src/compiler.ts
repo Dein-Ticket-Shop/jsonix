@@ -39,8 +39,15 @@ export async function compile(
     const tempFolder = path.resolve(`temp`);
     fs.mkdirSync(tempFolder, { recursive: true });
 
-    await exec(`java --add-opens=java.base/java.lang=ALL-UNNAMED -cp "${jarFolder}/jsonix-schema-compiler-full-2.3.9.jar:${jarFolder}/javax.activation-1.2.0.jar" org.hisrc.jsonix.JsonixMain -d ${tempFolder} -p ${name} ${inputPath}`, { shell: true as any, cwd: __dirname, stdio: "inherit" });
-    await exec(`java --add-opens=java.base/java.lang=ALL-UNNAMED -cp "${jarFolder}/jsonix-schema-compiler-full-2.3.9.jar:${jarFolder}/javax.activation-1.2.0.jar" org.hisrc.jsonix.JsonixMain -d ${tempFolder} -generateJsonSchema -p ${name} ${inputPath}`, { shell: true as any, cwd: __dirname, stdio: "inherit" });
+    const javaBase = `java --add-opens=java.base/java.lang=ALL-UNNAMED -Djdk.xml.maxOccurLimit=0 -cp "${jarFolder}/jsonix-schema-compiler-full-2.3.9.jar:${jarFolder}/javax.activation-1.2.0.jar" org.hisrc.jsonix.JsonixMain`;
+    await exec(`${javaBase} -d ${tempFolder} -p ${name} ${inputPath}`, { shell: true as any, cwd: __dirname, stdio: "inherit" });
+    if (!fs.existsSync(`${tempFolder}/${name}.js`)) {
+        throw new Error(`Jsonix schema compiler failed to generate ${name}.js — check Java error output above`);
+    }
+    await exec(`${javaBase} -d ${tempFolder} -generateJsonSchema -p ${name} ${inputPath}`, { shell: true as any, cwd: __dirname, stdio: "inherit" });
+    if (!fs.existsSync(`${tempFolder}/${name}.jsonschema`)) {
+        throw new Error(`Jsonix schema compiler failed to generate ${name}.jsonschema — check Java error output above`);
+    }
 
     const schemaContents = fs.readFileSync(`${tempFolder}/${name}.jsonschema`, "utf-8").replace(/http:\/\/www.jsonix.org\/jsonschemas\//g, "node_modules/jsonix/jsonschemas/");
     let types = await jsonSchemaToTypescript.compile(JSON.parse(schemaContents), name, {});
